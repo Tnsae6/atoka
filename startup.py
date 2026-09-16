@@ -27,3 +27,7 @@ else:
     print('Admin profile ensured')
 
 print('Startup complete - starting gunicorn...')
+
+# Start gunicorn
+from gunicorn.app.wsgiapp import run
+run()
