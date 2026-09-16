@@ -1,5 +1,6 @@
 #!/bin/bash
 python manage.py migrate --run-syncdb
+python manage.py collectstatic --noinput
 python manage.py shell -c "
 from django.contrib.auth.models import User
 if not User.objects.filter(username='admin').exists():
