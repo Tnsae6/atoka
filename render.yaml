@@ -3,7 +3,7 @@ services:
     name: atoka
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: bash startup.sh
+    startCommand: sh startup.sh
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: atoka_project.settings
