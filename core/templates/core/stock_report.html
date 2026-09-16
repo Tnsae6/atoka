@@ -1,0 +1,140 @@
+{% extends "core/base.html" %}
+{% block title %}Stock Report - Atoka{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Stock Report</h1>
+    <a href="{% url 'stock_dashboard' %}" class="btn btn-secondary">Back to Stock</a>
+</div>
+
+<div class="report-date-form">
+    <form method="get" class="date-picker-form">
+        <label for="date">Report Date:</label>
+        <input type="date" id="date" name="date" value="{{ report_date|date:'Y-m-d' }}">
+        <button type="submit" class="btn btn-primary btn-small">View Report</button>
+    </form>
+    <div class="report-date-title">{{ report_date|date:"l, F d, Y" }}</div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ restock_txns.count }}</div>
+        <div class="stat-label">Restock Transactions</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total_restock_qty }}</div>
+        <div class="stat-label">Units Restocked</div>
+    </div>
+    <div class="stat-card stat-highlight">
+        <div class="stat-number">{{ total_restock_cost|floatformat:2 }} Birr</div>
+        <div class="stat-label">Total Restock Cost</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ use_txns.count }}</div>
+        <div class="stat-label">Usage Transactions</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total_use_qty }}</div>
+        <div class="stat-label">Units Used</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total_use_value|floatformat:2 }} Birr</div>
+        <div class="stat-label">Value of Used Stock</div>
+    </div>
+</div>
+
+{% if restock_by_product %}
+<div class="section">
+    <h2>Restocked Items</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity Added</th>
+                <th>Unit</th>
+                <th>Total Cost</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in restock_by_product %}
+            <tr>
+                <td><strong>{{ item.name }}</strong></td>
+                <td>{{ item.quantity|floatformat:2 }}</td>
+                <td>{{ item.unit }}</td>
+                <td>{{ item.total_cost|floatformat:2 }} Birr</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if use_by_product %}
+<div class="section">
+    <h2>Used Items</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity Used</th>
+                <th>Unit</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in use_by_product %}
+            <tr>
+                <td><strong>{{ item.name }}</strong></td>
+                <td>{{ item.quantity|floatformat:2 }}</td>
+                <td>{{ item.unit }}</td>
+                <td>{{ item.total_value|floatformat:2 }} Birr</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="section">
+    <h2>All Transactions</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Action</th>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Price/Unit</th>
+                <th>Total Cost</th>
+                <th>Stock Before</th>
+                <th>Stock After</th>
+                <th>By</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for txn in transactions %}
+            <tr>
+                <td>{{ txn.created_at|date:"H:i" }}</td>
+                <td>
+                    {% if txn.action == 'restock' %}
+                    <span class="status-badge status-completed">Restock</span>
+                    {% elif txn.action == 'use' %}
+                    <span class="status-badge status-cancelled">Use</span>
+                    {% else %}
+                    <span class="status-badge status-pending">Edit</span>
+                    {% endif %}
+                </td>
+                <td>{{ txn.stock_item.name }}</td>
+                <td>{{ txn.quantity|floatformat:2 }} {{ txn.stock_item.get_unit_display }}</td>
+                <td>{{ txn.price_per_unit|floatformat:2 }} Birr</td>
+                <td>{{ txn.total_cost|floatformat:2 }} Birr</td>
+                <td>{{ txn.quantity_before|floatformat:2 }}</td>
+                <td>{{ txn.quantity_after|floatformat:2 }}</td>
+                <td>{{ txn.created_by.username }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9" class="text-center">No transactions for this date.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

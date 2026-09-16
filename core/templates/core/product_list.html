@@ -1,0 +1,59 @@
+{% extends "core/base.html" %}
+{% block title %}Products - Atoka{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Products</h1>
+    <div class="header-actions">
+        <select id="category-filter" onchange="filterByCategory(this.value)" class="form-control-inline">
+            <option value="">All Categories</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if selected_category == cat.id|slugify %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+        </select>
+        <a href="{% url 'product_create' %}" class="btn btn-primary">+ Add Product</a>
+    </div>
+</div>
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in products %}
+        <tr>
+            <td><strong>{{ product.name }}</strong></td>
+            <td>{{ product.category.name }}</td>
+            <td>{{ product.price|floatformat:2 }} Birr</td>
+            <td>
+                {% if product.is_available %}
+                <span class="status-badge status-completed">Available</span>
+                {% else %}
+                <span class="status-badge status-cancelled">Unavailable</span>
+                {% endif %}
+            </td>
+            <td class="actions">
+                <a href="{% url 'product_edit' product.pk %}" class="btn btn-small">Edit</a>
+                <a href="{% url 'product_delete' product.pk %}" class="btn btn-small btn-danger">Delete</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center">No products yet.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+function filterByCategory(categoryId) {
+    if (categoryId) {
+        window.location.href = '?category=' + categoryId;
+    } else {
+        window.location.href = '{% url "product_list" %}';
+    }
+}
+</script>
+{% endblock %}

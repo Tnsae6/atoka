@@ -1,0 +1,110 @@
+{% extends "core/base.html" %}
+{% block title %}My Daily Report - Atoka{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>My Daily Report</h1>
+</div>
+
+<div class="report-date-form">
+    <form method="get" class="date-picker-form">
+        <label for="report-date">Select Date:</label>
+        <input type="date" id="report-date" name="date" value="{{ report_date|date:'Y-m-d' }}">
+        <button type="submit" class="btn btn-primary">Load Report</button>
+    </form>
+    <h2 class="report-date-title">{{ report_date|date:"l, F j, Y" }}</h2>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ total_orders }}</div>
+        <div class="stat-label">My Orders</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ paid_count }}</div>
+        <div class="stat-label">Paid</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ cancelled_count }}</div>
+        <div class="stat-label">Cancelled</div>
+    </div>
+    <div class="stat-card stat-highlight">
+        <div class="stat-number">{{ total_revenue|floatformat:2 }} Birr</div>
+        <div class="stat-label">My Revenue</div>
+    </div>
+</div>
+
+{% if revenue_by_method %}
+<div class="section">
+    <h2>Revenue by Payment Method</h2>
+    <div class="stats-grid">
+        {% for method, data in revenue_by_method.items %}
+        {% if data.total %}
+        <div class="stat-card">
+            <div class="stat-number">{{ data.total|floatformat:2 }} Birr</div>
+            <div class="stat-label">{{ data.label }} ({{ data.count }} orders)</div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if product_sales %}
+<div class="section">
+    <h2>Products I Sold</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Qty Sold</th>
+                <th>Revenue</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ps in product_sales %}
+            <tr>
+                <td>{{ ps.name }}</td>
+                <td>{{ ps.quantity|floatformat:2 }}</td>
+                <td>{{ ps.revenue|floatformat:2 }} Birr</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if paid_orders %}
+<div class="section">
+    <h2>My Paid Orders</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Table</th>
+                <th>Payment</th>
+                <th>Total</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in paid_orders %}
+            <tr onclick="location.href='{% url 'order_detail' order.id %}'" style="cursor:pointer">
+                <td>{{ order.id }}</td>
+                <td>{{ order.table_number }}</td>
+                <td>{{ order.get_payment_method_display }}</td>
+                <td>{{ order.total_amount|floatformat:2 }} Birr</td>
+                <td>{{ order.paid_at|date:"H:i" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if not total_orders %}
+<div class="empty-state">
+    <h2>No Data for This Date</h2>
+    <p>You had no orders on {{ report_date|date:"F j, Y" }}.</p>
+</div>
+{% endif %}
+{% endblock %}

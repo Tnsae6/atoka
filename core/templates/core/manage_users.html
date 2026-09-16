@@ -1,0 +1,42 @@
+{% extends "core/base.html" %}
+{% block title %}Manage Users - Atoka{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Manage Users</h1>
+    <a href="{% url 'create_user' %}" class="btn btn-primary">+ Add User</a>
+</div>
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Last Login</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for u in users %}
+        <tr>
+            <td><strong>{{ u.username }}</strong></td>
+            <td>{{ u.get_full_name|default:"-" }}</td>
+            <td>
+                {% if u.profile %}
+                <span class="status-badge status-{{ u.profile.role }}">{{ u.profile.get_role_display }}</span>
+                {% else %}
+                <span class="status-badge">No Role</span>
+                {% endif %}
+            </td>
+            <td>{{ u.last_login|date:"M d, Y H:i"|default:"Never" }}</td>
+            <td>
+                {% if u != request.user %}
+                <a href="{% url 'delete_user' u.pk %}" class="btn btn-small btn-danger">Delete</a>
+                {% else %}
+                <span class="text-muted">You</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

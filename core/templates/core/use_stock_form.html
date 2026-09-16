@@ -1,0 +1,24 @@
+{% extends "core/base.html" %}
+{% block title %}Use Stock - {{ stock_item.name }} - Atoka{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Use Stock: {{ stock_item.name }}</h1>
+</div>
+<div class="form-card">
+    <div class="info-row">
+        <span class="info-label">Current Stock:</span>
+        <span class="info-value">{{ stock_item.quantity|floatformat:2 }} {{ stock_item.get_unit_display }}</span>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="use_quantity">Quantity to Use</label>
+            <input type="number" id="use_quantity" name="use_quantity" step="0.01" min="0.01" max="{{ stock_item.quantity }}" required>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">Use Stock</button>
+            <a href="{% url 'stock_dashboard' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

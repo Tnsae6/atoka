@@ -1,0 +1,326 @@
+{% extends "core/base.html" %}
+{% block title %}Stock Management - Atoka{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+    <h1>Stock Management</h1>
+    <div class="header-actions">
+        <a href="{% url 'stock_create' %}" class="btn btn-primary">+ Add Stock Item</a>
+        <a href="{% url 'stock_report' %}" class="btn btn-secondary">Stock Report</a>
+    </div>
+</div>
+
+{% if out_of_stock %}
+<div class="section">
+    <h2 class="text-danger">Out of Stock</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Stock</th>
+                <th>Unit</th>
+                <th>Price/Unit</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in out_of_stock %}
+            <tr class="row-danger">
+                <td><strong>{{ item.name }}</strong></td>
+                <td>{{ item.category|default:"-" }}</td>
+                <td>{{ item.quantity|floatformat:2 }}</td>
+                <td>{{ item.get_unit_display }}</td>
+                <td>{{ item.price_per_unit|floatformat:2 }} Birr</td>
+                <td>
+                    <button type="button" class="btn btn-small btn-primary stock-toggle-btn" data-target="restock-{{ item.pk }}">Restock</button>
+                    <a href="{% url 'stock_delete' item.pk %}" class="btn btn-small btn-danger">Delete</a>
+                </td>
+            </tr>
+            <tr class="stock-inline-row" id="restock-{{ item.pk }}" style="display:none">
+                <td colspan="6">
+                    <div class="stock-inline-form">
+                        <div class="inline-form-row">
+                            <label>Qty:</label>
+                            <input type="number" class="form-control-inline stock-qty-input" step="0.01" min="0.01" placeholder="0">
+                            <label>Price/Unit:</label>
+                            <input type="number" class="form-control-inline stock-price-input" step="0.01" min="0" value="{{ item.price_per_unit|floatformat:2 }}" placeholder="0">
+                            <button type="button" class="btn btn-small btn-primary stock-submit-btn" data-action="restock" data-id="{{ item.pk }}">Add</button>
+                            <button type="button" class="btn btn-small btn-secondary stock-cancel-btn">Cancel</button>
+                            <span class="stock-inline-msg"></span>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if low_stock %}
+<div class="section">
+    <h2 class="text-warning">Low Stock Alerts</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Stock</th>
+                <th>Threshold</th>
+                <th>Unit</th>
+                <th>Price/Unit</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in low_stock %}
+            <tr class="row-warning">
+                <td><strong>{{ item.name }}</strong></td>
+                <td>{{ item.category|default:"-" }}</td>
+                <td>{{ item.quantity|floatformat:2 }}</td>
+                <td>{{ item.low_stock_threshold|floatformat:2 }}</td>
+                <td>{{ item.get_unit_display }}</td>
+                <td>{{ item.price_per_unit|floatformat:2 }} Birr</td>
+                <td>
+                    <button type="button" class="btn btn-small btn-primary stock-toggle-btn" data-target="restock-{{ item.pk }}">Restock</button>
+                    <button type="button" class="btn btn-small btn-danger stock-toggle-btn" data-target="use-{{ item.pk }}">Use</button>
+                    <button type="button" class="btn btn-small stock-toggle-btn" data-target="edit-{{ item.pk }}">Edit</button>
+                    <a href="{% url 'stock_delete' item.pk %}" class="btn btn-small btn-danger">Delete</a>
+                </td>
+            </tr>
+            <tr class="stock-inline-row" id="restock-{{ item.pk }}" style="display:none">
+                <td colspan="7">
+                    <div class="stock-inline-form">
+                        <div class="inline-form-row">
+                            <label>Qty:</label>
+                            <input type="number" class="form-control-inline stock-qty-input" step="0.01" min="0.01" placeholder="0">
+                            <label>Price/Unit:</label>
+                            <input type="number" class="form-control-inline stock-price-input" step="0.01" min="0" value="{{ item.price_per_unit|floatformat:2 }}" placeholder="0">
+                            <button type="button" class="btn btn-small btn-primary stock-submit-btn" data-action="restock" data-id="{{ item.pk }}">Add</button>
+                            <button type="button" class="btn btn-small btn-secondary stock-cancel-btn">Cancel</button>
+                            <span class="stock-inline-msg"></span>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr class="stock-inline-row" id="use-{{ item.pk }}" style="display:none">
+                <td colspan="7">
+                    <div class="stock-inline-form">
+                        <div class="inline-form-row">
+                            <label>Qty to use:</label>
+                            <input type="number" class="form-control-inline stock-qty-input" step="0.01" min="0.01" max="{{ item.quantity|floatformat:2 }}" placeholder="0">
+                            <span class="text-muted" style="font-size:0.85rem">(Cost: {{ item.price_per_unit|floatformat:2 }} Birr/{{ item.get_unit_display }})</span>
+                            <button type="button" class="btn btn-small btn-danger stock-submit-btn" data-action="use" data-id="{{ item.pk }}">Use</button>
+                            <button type="button" class="btn btn-small btn-secondary stock-cancel-btn">Cancel</button>
+                            <span class="stock-inline-msg"></span>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr class="stock-inline-row" id="edit-{{ item.pk }}" style="display:none">
+                <td colspan="7">
+                    <div class="stock-inline-form">
+                        <div class="inline-form-row inline-form-edit">
+                            <label>Qty:</label>
+                            <input type="number" class="form-control-inline stock-edit-qty" step="0.01" min="0" value="{{ item.quantity|floatformat:2 }}">
+                            <label>Threshold:</label>
+                            <input type="number" class="form-control-inline stock-edit-threshold" step="0.01" min="0" value="{{ item.low_stock_threshold|floatformat:2 }}">
+                            <label>Unit:</label>
+                            <select class="form-control-inline stock-edit-unit">
+                                {% for value, label in item.UNIT_CHOICES %}
+                                <option value="{{ value }}" {% if item.unit == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <label>Price/Unit:</label>
+                            <input type="number" class="form-control-inline stock-edit-price" step="0.01" min="0" value="{{ item.price_per_unit|floatformat:2 }}">
+                            <button type="button" class="btn btn-small btn-primary stock-submit-btn" data-action="edit" data-id="{{ item.pk }}">Save</button>
+                            <button type="button" class="btn btn-small btn-secondary stock-cancel-btn">Cancel</button>
+                            <span class="stock-inline-msg"></span>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="section">
+    <h2>All Stock Items</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Quantity</th>
+                <th>Threshold</th>
+                <th>Unit</th>
+                <th>Price/Unit</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in stock_items %}
+            <tr>
+                <td><strong>{{ item.name }}</strong></td>
+                <td>{{ item.category|default:"-" }}</td>
+                <td id="qty-all-{{ item.pk }}">{{ item.quantity|floatformat:2 }}</td>
+                <td>{{ item.low_stock_threshold|floatformat:2 }}</td>
+                <td>{{ item.get_unit_display }}</td>
+                <td>{{ item.price_per_unit|floatformat:2 }} Birr</td>
+                <td>
+                    {% if item.is_out_of_stock %}
+                    <span class="status-badge status-cancelled">Out of Stock</span>
+                    {% elif item.is_low_stock %}
+                    <span class="status-badge status-pending">Low Stock</span>
+                    {% else %}
+                    <span class="status-badge status-completed">In Stock</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <button type="button" class="btn btn-small btn-primary stock-toggle-btn" data-target="restock-all-{{ item.pk }}">Restock</button>
+                    <button type="button" class="btn btn-small btn-danger stock-toggle-btn" data-target="use-all-{{ item.pk }}">Use</button>
+                    <button type="button" class="btn btn-small stock-toggle-btn" data-target="edit-all-{{ item.pk }}">Edit</button>
+                    <a href="{% url 'stock_delete' item.pk %}" class="btn btn-small btn-danger">Delete</a>
+                </td>
+            </tr>
+            <tr class="stock-inline-row" id="restock-all-{{ item.pk }}" style="display:none">
+                <td colspan="8">
+                    <div class="stock-inline-form">
+                        <div class="inline-form-row">
+                            <label>Qty:</label>
+                            <input type="number" class="form-control-inline stock-qty-input" step="0.01" min="0.01" placeholder="0">
+                            <label>Price/Unit:</label>
+                            <input type="number" class="form-control-inline stock-price-input" step="0.01" min="0" value="{{ item.price_per_unit|floatformat:2 }}" placeholder="0">
+                            <button type="button" class="btn btn-small btn-primary stock-submit-btn" data-action="restock" data-id="{{ item.pk }}">Add</button>
+                            <button type="button" class="btn btn-small btn-secondary stock-cancel-btn">Cancel</button>
+                            <span class="stock-inline-msg"></span>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr class="stock-inline-row" id="use-all-{{ item.pk }}" style="display:none">
+                <td colspan="8">
+                    <div class="stock-inline-form">
+                        <div class="inline-form-row">
+                            <label>Qty to use:</label>
+                            <input type="number" class="form-control-inline stock-qty-input" step="0.01" min="0.01" max="{{ item.quantity|floatformat:2 }}" placeholder="0">
+                            <span class="text-muted" style="font-size:0.85rem">(Cost: {{ item.price_per_unit|floatformat:2 }} Birr/{{ item.get_unit_display }})</span>
+                            <button type="button" class="btn btn-small btn-danger stock-submit-btn" data-action="use" data-id="{{ item.pk }}">Use</button>
+                            <button type="button" class="btn btn-small btn-secondary stock-cancel-btn">Cancel</button>
+                            <span class="stock-inline-msg"></span>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr class="stock-inline-row" id="edit-all-{{ item.pk }}" style="display:none">
+                <td colspan="8">
+                    <div class="stock-inline-form">
+                        <div class="inline-form-row inline-form-edit">
+                            <label>Qty:</label>
+                            <input type="number" class="form-control-inline stock-edit-qty" step="0.01" min="0" value="{{ item.quantity|floatformat:2 }}">
+                            <label>Threshold:</label>
+                            <input type="number" class="form-control-inline stock-edit-threshold" step="0.01" min="0" value="{{ item.low_stock_threshold|floatformat:2 }}">
+                            <label>Unit:</label>
+                            <select class="form-control-inline stock-edit-unit">
+                                {% for value, label in item.UNIT_CHOICES %}
+                                <option value="{{ value }}" {% if item.unit == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <label>Price/Unit:</label>
+                            <input type="number" class="form-control-inline stock-edit-price" step="0.01" min="0" value="{{ item.price_per_unit|floatformat:2 }}">
+                            <button type="button" class="btn btn-small btn-primary stock-submit-btn" data-action="edit" data-id="{{ item.pk }}">Save</button>
+                            <button type="button" class="btn btn-small btn-secondary stock-cancel-btn">Cancel</button>
+                            <span class="stock-inline-msg"></span>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="text-center">No stock items yet. Add one to get started.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function getCookie(name) {
+        let v = null;
+        document.cookie.split(';').forEach(c => {
+            c = c.trim();
+            if (c.startsWith(name + '=')) v = decodeURIComponent(c.substring(name.length + 1));
+        });
+        return v;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    document.querySelectorAll('.stock-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const row = document.getElementById(targetId);
+            if (!row) return;
+            document.querySelectorAll('.stock-inline-row').forEach(r => {
+                if (r.id !== targetId) r.style.display = 'none';
+            });
+            row.style.display = row.style.display === 'none' ? '' : 'none';
+        });
+    });
+
+    document.querySelectorAll('.stock-cancel-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.closest('.stock-inline-row').style.display = 'none';
+            const msg = this.closest('.stock-inline-form').querySelector('.stock-inline-msg');
+            if (msg) msg.textContent = '';
+        });
+    });
+
+    document.querySelectorAll('.stock-submit-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const action = this.getAttribute('data-action');
+            const stockId = this.getAttribute('data-id');
+            const formRow = this.closest('.stock-inline-form');
+            const msg = formRow.querySelector('.stock-inline-msg');
+            const formData = new FormData();
+            formData.append('action', action);
+            formData.append('stock_id', stockId);
+
+            if (action === 'restock') {
+                formData.append('quantity', formRow.querySelector('.stock-qty-input').value);
+                formData.append('price_per_unit', formRow.querySelector('.stock-price-input').value);
+            } else if (action === 'use') {
+                formData.append('quantity', formRow.querySelector('.stock-qty-input').value);
+            } else if (action === 'edit') {
+                formData.append('quantity', formRow.querySelector('.stock-edit-qty').value);
+                formData.append('low_stock_threshold', formRow.querySelector('.stock-edit-threshold').value);
+                formData.append('unit', formRow.querySelector('.stock-edit-unit').value);
+                formData.append('price_per_unit', formRow.querySelector('.stock-edit-price').value);
+            }
+
+            fetch('{% url "stock_inline_action" %}', {
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                body: formData,
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    msg.className = 'stock-inline-msg stock-msg-success';
+                    msg.textContent = data.message;
+                    setTimeout(() => { location.reload(); }, 800);
+                } else {
+                    msg.className = 'stock-inline-msg stock-msg-error';
+                    msg.textContent = data.error;
+                }
+            })
+            .catch(() => {
+                msg.className = 'stock-inline-msg stock-msg-error';
+                msg.textContent = 'Request failed.';
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

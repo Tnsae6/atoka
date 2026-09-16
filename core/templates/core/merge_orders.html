@@ -1,0 +1,65 @@
+{% extends "core/base.html" %}
+{% block title %}Add to Order - Atoka{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Add to Existing Order</h1>
+    <a href="{% url 'waiter_dashboard' %}" class="btn btn-secondary">Back</a>
+</div>
+
+<p class="text-muted" style="margin-bottom:1.5rem">Pick an open order to add more items to it, or enter a table number to find its order.</p>
+
+{% if active_orders %}
+<div class="section">
+    <h3>Open Orders</h3>
+    <form method="post">
+        {% csrf_token %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Table</th>
+                    <th>Status</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in active_orders %}
+                <tr>
+                    <td>{{ order.id }}</td>
+                    <td><strong>{{ order.table_number }}</strong></td>
+                    <td><span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+                    <td>
+                        {% for item in order.items.all %}
+                            {{ item.quantity }}x {{ item.product.name }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>{{ order.total_amount|floatformat:2 }} Birr</td>
+                    <td>
+                        {% if order.status == 'pending' or order.status == 'preparing' or order.status == 'ready' or order.status == 'served' %}
+                        <button type="submit" name="order_id" value="{{ order.id }}" class="btn btn-small btn-primary">Add Items</button>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+</div>
+{% endif %}
+
+<div class="section">
+    <h3>Or enter a table number</h3>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="table_number">Table Number</label>
+            <input type="text" id="table_number" name="table_number" placeholder="e.g. 5, 12B">
+        </div>
+        <button type="submit" class="btn btn-primary">Find & Add Items</button>
+    </form>
+</div>
+{% endblock %}

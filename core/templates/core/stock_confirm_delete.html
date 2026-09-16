@@ -1,0 +1,18 @@
+{% extends "core/base.html" %}
+{% block title %}Delete {{ stock_item.name }} - Atoka{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Delete Stock Item</h1>
+</div>
+<div class="form-card">
+    <p>Are you sure you want to delete <strong>{{ stock_item.name }}</strong>?</p>
+    <p class="text-muted">This will also delete all associated transactions. This cannot be undone.</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">Delete</button>
+            <a href="{% url 'stock_dashboard' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: atoka
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn atoka_project.wsgi:application
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: atoka_project.settings
+      - key: PYTHON_VERSION
+        value: 3.11.7
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "atoka.onrender.com"
+    autoDeploy: true

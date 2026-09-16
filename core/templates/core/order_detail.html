@@ -1,0 +1,213 @@
+{% extends "core/base.html" %}
+{% block title %}Order #{{ order.id }} - Atoka{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Order #{{ order.id }}</h1>
+    <a href="{% if role == 'manager' %}{% url 'manager_orders' %}{% else %}{% url 'waiter_dashboard' %}{% endif %}" class="btn btn-secondary">Back</a>
+</div>
+
+<div class="order-detail-layout">
+    <div class="order-info-card">
+        <div class="info-row">
+            <span class="info-label">Table:</span>
+            <span class="info-value">{{ order.table_number }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Waiter:</span>
+            <span class="info-value">{{ order.waiter.username }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Status:</span>
+            <span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Created:</span>
+            <span class="info-value">{{ order.created_at|date:"M d, Y H:i" }}</span>
+        </div>
+        {% if order.payment_method %}
+        <div class="info-row">
+            <span class="info-label">Payment:</span>
+            <span class="info-value"><strong>{{ order.get_payment_method_display }}</strong></span>
+        </div>
+        {% endif %}
+        {% if order.paid_at %}
+        <div class="info-row">
+            <span class="info-label">Paid At:</span>
+            <span class="info-value">{{ order.paid_at|date:"M d, Y H:i" }}</span>
+        </div>
+        {% endif %}
+        {% if order.notes %}
+        <div class="info-row">
+            <span class="info-label">Notes:</span>
+            <span class="info-value">{{ order.notes }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="order-items-card">
+        <h3>Items</h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.price_at_time|floatformat:2 }} Birr</td>
+                    <td>{{ item.subtotal|floatformat:2 }} Birr</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3"><strong>Total</strong></td>
+                    <td><strong>{{ order.total_amount|floatformat:2 }} Birr</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    {% if order.status != 'paid' and order.status != 'cancelled' %}
+    <div class="status-update-card">
+        <h3>Actions</h3>
+        <div class="status-buttons">
+            {% if role == 'waiter' %}
+                <div class="payment-section">
+                    <p class="payment-label">Select payment method to close order:</p>
+                    <div class="payment-buttons">
+                        <form method="post" action="{% url 'update_order_status' order.id %}" style="display:inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="paid">
+                            <input type="hidden" name="payment_method" value="cash">
+                            <button type="submit" class="btn btn-success">Cash - {{ order.total_amount|floatformat:2 }} Birr</button>
+                        </form>
+                        <form method="post" action="{% url 'update_order_status' order.id %}" style="display:inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="paid">
+                            <input type="hidden" name="payment_method" value="telebirr">
+                            <button type="submit" class="btn btn-success">TeleBirr - {{ order.total_amount|floatformat:2 }} Birr</button>
+                        </form>
+                        <form method="post" action="{% url 'update_order_status' order.id %}" style="display:inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="paid">
+                            <input type="hidden" name="payment_method" value="cbe">
+                            <button type="submit" class="btn btn-success">CBE - {{ order.total_amount|floatformat:2 }} Birr</button>
+                        </form>
+                        <form method="post" action="{% url 'update_order_status' order.id %}" style="display:inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="paid">
+                            <input type="hidden" name="payment_method" value="card">
+                            <button type="submit" class="btn btn-success">Card - {{ order.total_amount|floatformat:2 }} Birr</button>
+                        </form>
+                    </div>
+                </div>
+                {% if order.status != 'cancelled' %}
+                <form method="post" action="{% url 'update_order_status' order.id %}" style="margin-top:1rem">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="cancelled">
+                    <button type="submit" class="btn btn-danger">Cancel Order</button>
+                </form>
+                {% endif %}
+            {% elif role == 'manager' %}
+                {% if order.status == 'pending' %}
+                <form method="post" action="{% url 'update_order_status' order.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="preparing">
+                    <button type="submit" class="btn btn-primary">Start Preparing</button>
+                </form>
+                {% endif %}
+                {% if order.status == 'preparing' %}
+                <form method="post" action="{% url 'update_order_status' order.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="ready">
+                    <button type="submit" class="btn btn-primary">Mark Ready</button>
+                </form>
+                {% endif %}
+                {% if order.status == 'ready' %}
+                <form method="post" action="{% url 'update_order_status' order.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="served">
+                    <button type="submit" class="btn btn-primary">Mark Served</button>
+                </form>
+                {% endif %}
+                {% if order.status == 'served' %}
+                <div class="payment-section">
+                    <p class="payment-label">Select payment method to close order:</p>
+                    <div class="payment-buttons">
+                        <form method="post" action="{% url 'update_order_status' order.id %}" style="display:inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="paid">
+                            <input type="hidden" name="payment_method" value="cash">
+                            <button type="submit" class="btn btn-success">Cash - {{ order.total_amount|floatformat:2 }} Birr</button>
+                        </form>
+                        <form method="post" action="{% url 'update_order_status' order.id %}" style="display:inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="paid">
+                            <input type="hidden" name="payment_method" value="telebirr">
+                            <button type="submit" class="btn btn-success">TeleBirr - {{ order.total_amount|floatformat:2 }} Birr</button>
+                        </form>
+                        <form method="post" action="{% url 'update_order_status' order.id %}" style="display:inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="paid">
+                            <input type="hidden" name="payment_method" value="cbe">
+                            <button type="submit" class="btn btn-success">CBE - {{ order.total_amount|floatformat:2 }} Birr</button>
+                        </form>
+                        <form method="post" action="{% url 'update_order_status' order.id %}" style="display:inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="paid">
+                            <input type="hidden" name="payment_method" value="card">
+                            <button type="submit" class="btn btn-success">Card - {{ order.total_amount|floatformat:2 }} Birr</button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+                {% if order.status != 'cancelled' %}
+                <form method="post" action="{% url 'update_order_status' order.id %}" style="margin-top:1rem">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="cancelled">
+                    <button type="submit" class="btn btn-danger">Cancel Order</button>
+                </form>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="status-update-card">
+        {% if order.status == 'paid' %}
+        <div class="info-row">
+            <span class="info-label">Paid via:</span>
+            <span class="info-value status-badge status-paid">{{ order.get_payment_method_display }}</span>
+        </div>
+        {% if role == 'waiter' or role == 'manager' %}
+        <div class="payment-section" style="margin-top:1rem">
+            <p class="payment-label">Change payment method:</p>
+            <div class="payment-buttons">
+                {% for method, label in order.PAYMENT_METHOD_CHOICES %}
+                {% if method and method != order.payment_method %}
+                <form method="post" action="{% url 'change_payment_method' order.id %}" style="display:inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="payment_method" value="{{ method }}">
+                    <button type="submit" class="btn btn-small">{{ label }}</button>
+                </form>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% elif order.status == 'cancelled' %}
+        <div class="info-row">
+            <span class="info-label">Status:</span>
+            <span class="info-value status-badge status-cancelled">Cancelled</span>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

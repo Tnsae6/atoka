@@ -1,0 +1,17 @@
+{% extends "core/base.html" %}
+{% block title %}Delete Product - Atoka{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Delete Product</h1>
+</div>
+<div class="form-card">
+    <p>Are you sure you want to delete <strong>{{ product.name }}</strong>?</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">Yes, Delete</button>
+            <a href="{% url 'product_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

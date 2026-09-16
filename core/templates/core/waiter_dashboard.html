@@ -1,0 +1,92 @@
+{% extends "core/base.html" %}
+{% block title %}Waiter Dashboard - Atoka{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+    <h1>Waiter Dashboard</h1>
+    <div class="header-actions">
+        <a href="{% url 'merge_orders' %}" class="btn btn-secondary">Add to Order</a>
+        <a href="{% url 'create_order' %}" class="btn btn-primary">+ New Order</a>
+    </div>
+</div>
+
+{% if active_orders %}
+<div class="section">
+    <h2>My Active Orders</h2>
+    <div class="orders-grid">
+        {% for order in active_orders %}
+        <div class="order-card order-{{ order.status }}">
+            <div class="order-header">
+                <span class="order-id">#{{ order.id }}</span>
+                <span class="order-table">Table {{ order.table_number }}</span>
+            </div>
+            <div class="order-status">
+                <span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+            </div>
+            <div class="order-items">
+                {% for item in order.items.all %}
+                <div class="order-item">
+                    {{ item.quantity }}x {{ item.product.name }}
+                </div>
+                {% endfor %}
+            </div>
+            <div class="order-total">{{ order.total_amount|floatformat:2 }} Birr</div>
+            <div class="order-actions">
+                <a href="{% url 'order_detail' order.id %}" class="btn btn-small">View</a>
+                {% if order.status != 'paid' and order.status != 'cancelled' %}
+                <a href="{% url 'edit_order' order.id %}" class="btn btn-small btn-primary">Edit</a>
+                <a href="{% url 'order_detail' order.id %}" class="btn btn-small btn-success">Take Payment</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="empty-state" style="padding:2rem">
+    <h2>No Active Orders</h2>
+    <p>Create a new order to get started.</p>
+    <a href="{% url 'create_order' %}" class="btn btn-primary">+ New Order</a>
+</div>
+{% endif %}
+
+{% if today_orders %}
+<div class="section">
+    <h2>Today's Orders</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Table</th>
+                <th>Status</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Time</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in today_orders %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.table_number }}</td>
+                <td><span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+                <td>
+                    {% for item in order.items.all %}
+                        {{ item.quantity }}x {{ item.product.name }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </td>
+                <td>{{ order.total_amount|floatformat:2 }} Birr</td>
+                <td>{{ order.created_at|date:"H:i" }}</td>
+                <td class="actions">
+                    <a href="{% url 'order_detail' order.id %}" class="btn btn-small">View</a>
+                    {% if order.status != 'paid' and order.status != 'cancelled' %}
+                    <a href="{% url 'edit_order' order.id %}" class="btn btn-small btn-primary">Edit</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,299 @@
+{% extends "core/base.html" %}
+{% block title %}Menu Management - Atoka{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Menu Management</h1>
+</div>
+
+<div class="section">
+    <div class="section-header">
+        <h2>Categories & Products</h2>
+        <button type="button" class="btn btn-primary" onclick="showAddCategory()">+ Add Category</button>
+    </div>
+
+    <div id="add-category-form" class="inline-form-card" style="display:none">
+        <h4>New Category</h4>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="new-cat-name" placeholder="Category name" required>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" id="new-cat-desc" placeholder="Optional description">
+            </div>
+            <div class="form-group">
+                <label>Sort Order</label>
+                <input type="number" id="new-cat-sort" value="0" min="0">
+            </div>
+            <div class="form-group form-check">
+                <label><input type="checkbox" id="new-cat-active" checked> Active</label>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="button" class="btn btn-primary" onclick="saveNewCategory()">Save</button>
+            <button type="button" class="btn btn-secondary" onclick="hideAddCategory()">Cancel</button>
+            <span class="inline-msg" id="new-cat-msg"></span>
+        </div>
+    </div>
+
+    <div id="categories-container">
+        {% for cat in categories %}
+        <div class="category-block" id="cat-{{ cat.id }}">
+            <div class="category-header">
+                <div class="category-info" id="cat-display-{{ cat.id }}">
+                    <h3>{{ cat.name }}</h3>
+                    <span class="text-muted">{{ cat.description|truncatewords:8 }}</span>
+                    <span class="text-muted">({{ cat.products.count }} products)</span>
+                    {% if not cat.is_active %}<span class="status-badge status-cancelled">Inactive</span>{% endif %}
+                </div>
+                <div class="category-actions">
+                    <button type="button" class="btn btn-small" onclick="editCategory({{ cat.id }})">Edit</button>
+                    <button type="button" class="btn btn-small btn-danger" onclick="deleteCategory({{ cat.id }})">Delete</button>
+                    <button type="button" class="btn btn-small btn-primary" onclick="showAddProduct({{ cat.id }})">+ Product</button>
+                </div>
+            </div>
+
+            <div class="category-edit-form" id="cat-edit-{{ cat.id }}" style="display:none">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" class="cat-name" value="{{ cat.name }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" class="cat-desc" value="{{ cat.description }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Sort</label>
+                        <input type="number" class="cat-sort" value="{{ cat.sort_order }}" min="0">
+                    </div>
+                    <div class="form-group form-check">
+                        <label><input type="checkbox" class="cat-active" {% if cat.is_active %}checked{% endif %}> Active</label>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-primary btn-small" onclick="saveCategory({{ cat.id }})">Save</button>
+                    <button type="button" class="btn btn-secondary btn-small" onclick="cancelEditCategory({{ cat.id }})">Cancel</button>
+                    <span class="inline-msg" id="cat-msg-{{ cat.id }}"></span>
+                </div>
+            </div>
+
+            <div class="add-product-form" id="add-prod-{{ cat.id }}" style="display:none">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" class="new-prod-name" placeholder="Product name">
+                    </div>
+                    <div class="form-group">
+                        <label>Price (Birr)</label>
+                        <input type="number" class="new-prod-price" step="0.01" min="0" placeholder="0">
+                    </div>
+                    <div class="form-group form-check">
+                        <label><input type="checkbox" class="new-prod-available" checked> Available</label>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-primary btn-small" onclick="saveNewProduct({{ cat.id }})">Add</button>
+                    <button type="button" class="btn btn-secondary btn-small" onclick="hideAddProduct({{ cat.id }})">Cancel</button>
+                    <span class="inline-msg" id="prod-msg-new-{{ cat.id }}"></span>
+                </div>
+            </div>
+
+            <table class="data-table" id="products-table-{{ cat.id }}">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in cat.products.all %}
+                    <tr id="prod-{{ product.id }}">
+                        <td id="prod-name-{{ product.id }}">{{ product.name }}</td>
+                        <td id="prod-price-{{ product.id }}">{{ product.price|floatformat:2 }} Birr</td>
+                        <td id="prod-status-{{ product.id }}">
+                            {% if product.is_available %}
+                            <span class="status-badge status-completed">Available</span>
+                            {% else %}
+                            <span class="status-badge status-cancelled">Unavailable</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions">
+                            <button type="button" class="btn btn-small" onclick="editProduct({{ product.id }})">Edit</button>
+                            <button type="button" class="btn btn-small btn-danger" onclick="deleteProduct({{ product.id }})">Delete</button>
+                        </td>
+                    </tr>
+                    <tr id="prod-edit-{{ product.id }}" style="display:none">
+                        <td colspan="4">
+                            <div class="inline-form-row">
+                                <label>Name:</label>
+                                <input type="text" class="edit-prod-name" value="{{ product.name }}">
+                                <label>Price:</label>
+                                <input type="number" class="edit-prod-price" step="0.01" min="0" value="{{ product.price }}">
+                                <label><input type="checkbox" class="edit-prod-available" {% if product.is_available %}checked{% endif %}> Available</label>
+                                <button type="button" class="btn btn-small btn-primary" onclick="saveProduct({{ product.id }}, {{ cat.id }})">Save</button>
+                                <button type="button" class="btn btn-small btn-secondary" onclick="cancelEditProduct({{ product.id }})">Cancel</button>
+                                <span class="inline-msg" id="prod-msg-{{ product.id }}"></span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr id="empty-{{ cat.id }}"><td colspan="4" class="text-center text-muted">No products yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <h2>No Categories</h2>
+            <p>Create your first category to start building the menu.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCookie(name) {
+    let v = null;
+    document.cookie.split(';').forEach(c => {
+        c = c.trim();
+        if (c.startsWith(name + '=')) v = decodeURIComponent(c.substring(name.length + 1));
+    });
+    return v;
+}
+const csrftoken = getCookie('csrftoken');
+
+function postAction(url, data, callback) {
+    const formData = new FormData();
+    for (const [k, v] of Object.entries(data)) {
+        if (v === true) formData.append(k, 'on');
+        else if (v !== false && v !== null && v !== undefined) formData.append(k, v);
+    }
+    fetch(url, {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken},
+        body: formData,
+    })
+    .then(r => r.json())
+    .then(data => callback(data))
+    .catch(() => callback({error: 'Request failed.'}));
+}
+
+function showAddCategory() {
+    document.getElementById('add-category-form').style.display = '';
+    document.getElementById('new-cat-name').focus();
+}
+function hideAddCategory() {
+    document.getElementById('add-category-form').style.display = 'none';
+    document.getElementById('new-cat-msg').textContent = '';
+}
+
+function saveNewCategory() {
+    const name = document.getElementById('new-cat-name').value.trim();
+    if (!name) { document.getElementById('new-cat-msg').textContent = 'Name required.'; return; }
+    postAction('{% url "category_inline_action" %}', {
+        action: 'create', name: name,
+        description: document.getElementById('new-cat-desc').value,
+        sort_order: document.getElementById('new-cat-sort').value,
+        is_active: document.getElementById('new-cat-active').checked,
+    }, function(res) {
+        if (res.error) { document.getElementById('new-cat-msg').textContent = res.error; return; }
+        location.reload();
+    });
+}
+
+function editCategory(id) {
+    document.getElementById('cat-display-' + id).style.display = 'none';
+    document.getElementById('cat-edit-' + id).style.display = '';
+}
+function cancelEditCategory(id) {
+    document.getElementById('cat-display-' + id).style.display = '';
+    document.getElementById('cat-edit-' + id).style.display = 'none';
+    document.getElementById('cat-msg-' + id).textContent = '';
+}
+
+function saveCategory(id) {
+    const form = document.getElementById('cat-edit-' + id);
+    postAction('{% url "category_inline_action" %}', {
+        action: 'update', id: id,
+        name: form.querySelector('.cat-name').value,
+        description: form.querySelector('.cat-desc').value,
+        sort_order: form.querySelector('.cat-sort').value,
+        is_active: form.querySelector('.cat-active').checked,
+    }, function(res) {
+        if (res.error) { document.getElementById('cat-msg-' + id).textContent = res.error; return; }
+        location.reload();
+    });
+}
+
+function deleteCategory(id) {
+    if (!confirm('Delete this category and all its products?')) return;
+    postAction('{% url "category_inline_action" %}', {action: 'delete', id: id}, function(res) {
+        if (res.error) return;
+        document.getElementById('cat-' + id).remove();
+    });
+}
+
+function showAddProduct(catId) {
+    document.getElementById('add-prod-' + catId).style.display = '';
+}
+function hideAddProduct(catId) {
+    document.getElementById('add-prod-' + catId).style.display = 'none';
+    document.getElementById('prod-msg-new-' + catId).textContent = '';
+}
+
+function saveNewProduct(catId) {
+    const form = document.getElementById('add-prod-' + catId);
+    const name = form.querySelector('.new-prod-name').value.trim();
+    const price = form.querySelector('.new-prod-price').value;
+    if (!name || !price) {
+        document.getElementById('prod-msg-new-' + catId).textContent = 'Name and price required.';
+        return;
+    }
+    postAction('{% url "product_inline_action" %}', {
+        action: 'create', name: name, category_id: catId,
+        price: price, is_available: form.querySelector('.new-prod-available').checked,
+    }, function(res) {
+        if (res.error) { document.getElementById('prod-msg-new-' + catId).textContent = res.error; return; }
+        location.reload();
+    });
+}
+
+function editProduct(id) {
+    document.getElementById('prod-' + id).style.display = 'none';
+    document.getElementById('prod-edit-' + id).style.display = '';
+}
+function cancelEditProduct(id) {
+    document.getElementById('prod-' + id).style.display = '';
+    document.getElementById('prod-edit-' + id).style.display = 'none';
+    document.getElementById('prod-msg-' + id).textContent = '';
+}
+
+function saveProduct(id, catId) {
+    const form = document.getElementById('prod-edit-' + id);
+    postAction('{% url "product_inline_action" %}', {
+        action: 'update', id: id,
+        name: form.querySelector('.edit-prod-name').value,
+        price: form.querySelector('.edit-prod-price').value,
+        is_available: form.querySelector('.edit-prod-available').checked,
+    }, function(res) {
+        if (res.error) { document.getElementById('prod-msg-' + id).textContent = res.error; return; }
+        location.reload();
+    });
+}
+
+function deleteProduct(id) {
+    if (!confirm('Delete this product?')) return;
+    postAction('{% url "product_inline_action" %}', {action: 'delete', id: id}, function(res) {
+        if (res.error) return;
+        document.getElementById('prod-' + id).remove();
+        document.getElementById('prod-edit-' + id).remove();
+    });
+}
+</script>
+{% endblock %}

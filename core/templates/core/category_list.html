@@ -1,0 +1,43 @@
+{% extends "core/base.html" %}
+{% block title %}Categories - Atoka{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Categories</h1>
+    <a href="{% url 'category_create' %}" class="btn btn-primary">+ Add Category</a>
+</div>
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Sort Order</th>
+            <th>Status</th>
+            <th>Products</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for cat in categories %}
+        <tr>
+            <td><strong>{{ cat.name }}</strong></td>
+            <td>{{ cat.description|truncatewords:10 }}</td>
+            <td>{{ cat.sort_order }}</td>
+            <td>
+                {% if cat.is_active %}
+                <span class="status-badge status-completed">Active</span>
+                {% else %}
+                <span class="status-badge status-cancelled">Inactive</span>
+                {% endif %}
+            </td>
+            <td>{{ cat.products.count }}</td>
+            <td class="actions">
+                <a href="{% url 'category_edit' cat.pk %}" class="btn btn-small">Edit</a>
+                <a href="{% url 'category_delete' cat.pk %}" class="btn btn-small btn-danger">Delete</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center">No categories yet. Create your first category!</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

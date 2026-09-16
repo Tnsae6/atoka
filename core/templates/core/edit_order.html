@@ -1,0 +1,160 @@
+{% extends "core/base.html" %}
+{% block title %}Edit Order #{{ order.id }} - Atoka{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Edit Order #{{ order.id }}</h1>
+    <a href="{% url 'waiter_dashboard' %}" class="btn btn-secondary">Back</a>
+</div>
+
+<div class="order-form-layout">
+    <div class="menu-section">
+        <div class="form-group">
+            <label for="table_number">Table Number</label>
+            <input type="text" id="table_number" value="{{ order.table_number }}" required>
+        </div>
+
+        <div class="category-tabs" id="categoryTabs">
+            {% for cat in categories %}
+            <button class="tab-btn {% if forloop.first %}active{% endif %}" data-category="{{ cat.id }}" onclick="switchCategory(this)">
+                {{ cat.name }}
+            </button>
+            {% endfor %}
+        </div>
+
+        <div class="menu-items" id="menuItems">
+            {% for cat in categories %}
+            <div class="category-section" data-category="{{ cat.id }}" {% if not forloop.first %}style="display:none"{% endif %}>
+                <h3>{{ cat.name }}</h3>
+                <div class="product-grid">
+                    {% for product in cat.products.all %}
+                    {% if product.is_available %}
+                    <div class="menu-item" onclick="addToOrder({{ product.id }}, '{{ product.name|escapejs }}', {{ product.price }})">
+                        <div class="item-name">{{ product.name }}</div>
+                        <div class="item-price">{{ product.price|floatformat:2 }} Birr</div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="order-sidebar">
+        <h3>Order Items</h3>
+        <div class="order-summary" id="orderSummary">
+            <p class="empty-order-text">Loading items...</p>
+        </div>
+        <div class="order-total-section">
+            <div class="order-total-line">
+                <span>Total:</span>
+                <span id="orderTotal">0.00 Birr</span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="orderNotes">Notes</label>
+            <textarea id="orderNotes" rows="2" placeholder="Special instructions...">{{ order.notes }}</textarea>
+        </div>
+        <form id="orderForm" method="post" action="{% url 'edit_order' order.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="table_number" id="hiddenTableNumber">
+            <input type="hidden" name="notes" id="hiddenNotes">
+            <input type="hidden" name="items" id="hiddenItems">
+        </form>
+        <button type="button" class="btn btn-primary btn-block" onclick="submitOrder()">
+            Save Changes
+        </button>
+    </div>
+</div>
+
+<script>
+let orderItems = {{ existing_items_json|safe }};
+
+function switchCategory(btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const catId = btn.dataset.category;
+    document.querySelectorAll('.category-section').forEach(s => s.style.display = 'none');
+    document.querySelector('.category-section[data-category="' + catId + '"]').style.display = 'block';
+}
+
+function addToOrder(productId, name, price) {
+    const existing = orderItems.find(i => i.product_id === productId);
+    if (existing) {
+        existing.quantity++;
+    } else {
+        orderItems.push({ product_id: productId, name: name, price: parseFloat(price), quantity: 1, notes: '' });
+    }
+    renderOrder();
+}
+
+function updateQuantity(productId, delta) {
+    const item = orderItems.find(i => i.product_id === productId);
+    if (item) {
+        item.quantity += delta;
+        if (item.quantity <= 0) {
+            orderItems = orderItems.filter(i => i.product_id !== productId);
+        }
+    }
+    renderOrder();
+}
+
+function removeItem(productId) {
+    orderItems = orderItems.filter(i => i.product_id !== productId);
+    renderOrder();
+}
+
+function renderOrder() {
+    const summary = document.getElementById('orderSummary');
+    const totalEl = document.getElementById('orderTotal');
+
+    if (orderItems.length === 0) {
+        summary.innerHTML = '<p class="empty-order-text">Click items to add them</p>';
+        totalEl.textContent = '0.00 Birr';
+        return;
+    }
+
+    let html = '';
+    let total = 0;
+
+    orderItems.forEach(item => {
+        const subtotal = item.quantity * item.price;
+        total += subtotal;
+        html += '<div class="order-line">' +
+            '<div class="order-line-info">' +
+            '<span class="order-line-name">' + item.name + '</span>' +
+            '<span class="order-line-price">' + subtotal.toFixed(2) + ' Birr</span>' +
+            '</div>' +
+            '<div class="order-line-controls">' +
+            '<button class="qty-btn" onclick="updateQuantity(' + item.product_id + ', -1)">-</button>' +
+            '<span class="qty-value">' + item.quantity + '</span>' +
+            '<button class="qty-btn" onclick="updateQuantity(' + item.product_id + ', 1)">+</button>' +
+            '<button class="qty-btn qty-remove" onclick="removeItem(' + item.product_id + ')">x</button>' +
+            '</div></div>';
+    });
+
+    summary.innerHTML = html;
+    totalEl.textContent = total.toFixed(2) + ' Birr';
+}
+
+function submitOrder() {
+    const tableNumber = document.getElementById('table_number').value.trim();
+    if (!tableNumber) {
+        alert('Please enter a table number.');
+        document.getElementById('table_number').focus();
+        return;
+    }
+    if (orderItems.length === 0) {
+        alert('Order must have at least one item.');
+        return;
+    }
+
+    document.getElementById('hiddenTableNumber').value = tableNumber;
+    document.getElementById('hiddenNotes').value = document.getElementById('orderNotes').value;
+    document.getElementById('hiddenItems').value = JSON.stringify(orderItems);
+    document.getElementById('orderForm').submit();
+}
+
+renderOrder();
+</script>
+{% endblock %}

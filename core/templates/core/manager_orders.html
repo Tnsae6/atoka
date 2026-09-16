@@ -1,0 +1,47 @@
+{% extends "core/base.html" %}
+{% block title %}All Orders - Atoka{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>All Orders</h1>
+</div>
+
+<div class="filter-bar">
+    <a href="{% url 'manager_orders' %}" class="filter-btn {% if not status_filter %}active{% endif %}">All</a>
+    {% for value, label in status_choices %}
+    <a href="{% url 'manager_orders' %}?status={{ value }}" class="filter-btn {% if status_filter == value %}active{% endif %}">{{ label }}</a>
+    {% endfor %}
+</div>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Table</th>
+            <th>Waiter</th>
+            <th>Status</th>
+            <th>Payment</th>
+            <th>Total</th>
+            <th>Created</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+        <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.table_number }}</td>
+            <td>{{ order.waiter.username }}</td>
+            <td><span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+            <td>{% if order.payment_method %}{{ order.get_payment_method_display }}{% else %}-{% endif %}</td>
+            <td>{{ order.total_amount|floatformat:2 }} Birr</td>
+            <td>{{ order.created_at|date:"M d H:i" }}</td>
+            <td>
+                <a href="{% url 'order_detail' order.id %}" class="btn btn-small">View</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="text-center">No orders found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

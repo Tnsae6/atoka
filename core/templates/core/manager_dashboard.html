@@ -1,0 +1,103 @@
+{% extends "core/base.html" %}
+{% block title %}Manager Dashboard - Atoka{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+    <h1>Manager Dashboard</h1>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ active_orders }}</div>
+        <div class="stat-label">Active Orders</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total_orders_today }}</div>
+        <div class="stat-label">Orders Today</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ paid_count_today }}</div>
+        <div class="stat-label">Paid Today</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total_revenue_today|floatformat:2 }} Birr</div>
+        <div class="stat-label">Revenue Today</div>
+    </div>
+</div>
+
+{% if total_revenue_today %}
+<div class="section">
+    <h2>Today's Revenue Breakdown</h2>
+    <div class="stats-grid">
+        {% if revenue_cash %}
+        <div class="stat-card">
+            <div class="stat-number">{{ revenue_cash|floatformat:2 }} Birr</div>
+            <div class="stat-label">Cash</div>
+        </div>
+        {% endif %}
+        {% if revenue_telebirr %}
+        <div class="stat-card">
+            <div class="stat-number">{{ revenue_telebirr|floatformat:2 }} Birr</div>
+            <div class="stat-label">TeleBirr</div>
+        </div>
+        {% endif %}
+        {% if revenue_cbe %}
+        <div class="stat-card">
+            <div class="stat-number">{{ revenue_cbe|floatformat:2 }} Birr</div>
+            <div class="stat-label">CBE</div>
+        </div>
+        {% endif %}
+        {% if revenue_card %}
+        <div class="stat-card">
+            <div class="stat-number">{{ revenue_card|floatformat:2 }} Birr</div>
+            <div class="stat-label">Card</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<div class="dashboard-grid">
+    <div class="section">
+        <h2>Recent Orders</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Table</th>
+                    <th>Waiter</th>
+                    <th>Status</th>
+                    <th>Payment</th>
+                    <th>Total</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in recent_orders %}
+                <tr>
+                    <td>{{ order.id }}</td>
+                    <td>{{ order.table_number }}</td>
+                    <td>{{ order.waiter.username }}</td>
+                    <td><span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+                    <td>{% if order.payment_method %}{{ order.get_payment_method_display }}{% else %}-{% endif %}</td>
+                    <td>{{ order.total_amount|floatformat:2 }} Birr</td>
+                    <td><a href="{% url 'order_detail' order.id %}" class="btn btn-small">View</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center">No orders yet</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Quick Actions</h2>
+        <div class="quick-actions">
+            <a href="{% url 'category_create' %}" class="btn btn-primary">Add Category</a>
+            <a href="{% url 'product_create' %}" class="btn btn-primary">Add Product</a>
+            <a href="{% url 'daily_report' %}" class="btn btn-primary">Daily Report</a>
+            <a href="{% url 'create_user' %}" class="btn btn-secondary">Add User</a>
+            <a href="{% url 'manager_orders' %}" class="btn btn-secondary">View All Orders</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
