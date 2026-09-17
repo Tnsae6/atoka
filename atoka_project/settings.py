@@ -6,6 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-sb0v^5+n2dq1$ttn((b$9vf^@)+!36p6_ngt(9pgx%wk6*g-o*')
 
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+ADMIN_SETUP_TOKEN = os.environ.get('ADMIN_SETUP_TOKEN', '')
 
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', 'atoka.onrender.com,localhost,127.0.0.1').split(',')]
 

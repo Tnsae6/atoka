@@ -4,6 +4,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
+from django.conf import settings
+from django.db import IntegrityError
+from django.http import HttpResponseForbidden
+from django.utils.crypto import constant_time_compare
+from django.views.decorators.cache import never_cache
+from django.views.decorators.debug import sensitive_post_parameters
+from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q, Sum, Count, F
@@ -25,6 +33,41 @@ def login_view(request):
         else:
             messages.error(request, 'Invalid username or password.')
     return render(request, 'registration/login.html')
+
+
+@sensitive_post_parameters('password1', 'password2', 'setup_token')
+@never_cache
+@require_http_methods(['GET', 'POST'])
+def register_superuser(request):
+    authorized = request.user.is_authenticated and request.user.is_active and request.user.is_superuser
+    token = settings.ADMIN_SETUP_TOKEN
+    bootstrap = bool(token) and not User.objects.filter(is_superuser=True).exists()
+    if not authorized and not bootstrap:
+        return HttpResponseForbidden('Superuser registration is restricted to existing superusers.')
+
+    form = UserCreationForm(request.POST if request.method == 'POST' else None)
+    if request.method == 'POST':
+        if not authorized and not constant_time_compare(request.POST.get('setup_token', ''), token):
+            return HttpResponseForbidden('Invalid setup token.')
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    if not authorized and User.objects.filter(is_superuser=True).exists():
+                        return HttpResponseForbidden('Initial setup is already complete.')
+                    user = form.save(commit=False)
+                    user.is_staff = True
+                    user.is_superuser = True
+                    user.save()
+                    UserProfile.objects.create(user=user, role='manager')
+            except IntegrityError:
+                form.add_error(None, 'Unable to create this account. Please choose another username.')
+            else:
+                messages.success(request, 'Superuser created. You can now log in.')
+                return redirect('login')
+    return render(request, 'registration/register_superuser.html', {
+        'form': form,
+        'requires_setup_token': not authorized,
+    })
 
 
 def logout_view(request):
