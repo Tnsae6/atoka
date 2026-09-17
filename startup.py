@@ -1,4 +1,5 @@
 import os
+import sys
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'atoka_project.settings')
 
@@ -10,8 +11,7 @@ from django.core.management import call_command
 # Run migrations (creates DB tables if first run)
 call_command('migrate', '--run-syncdb', verbosity=0)
 
-# Collect static files for Whitenoise
-call_command('collectstatic', '--noinput', verbosity=0)
+call_command('collectstatic', '--noinput', verbosity=1)
 
 # Ensure admin user exists with profile
 from django.contrib.auth.models import User
@@ -28,9 +28,7 @@ else:
 
 print('Startup complete - starting gunicorn...')
 
-# Start gunicorn bound to Render's required host/port
-import sys
+# Start gunicorn in a fresh process so cached settings/state from
+# collectstatic cannot leak into request handling
 port = os.environ.get('PORT', '8000')
-sys.argv = ['gunicorn', '--bind', f'0.0.0.0:{port}', '--workers', '2', 'atoka_project.wsgi:application']
-from gunicorn.app.wsgiapp import run
-run()
+os.execv(sys.executable, [sys.executable, '-m', 'gunicorn', '--bind', f'0.0.0.0:{port}', '--workers', '2', 'atoka_project.wsgi:application'])

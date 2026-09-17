@@ -2,7 +2,7 @@ services:
   - type: web
     name: atoka
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
     startCommand: python startup.py
     envVars:
       - key: DJANGO_SETTINGS_MODULE
