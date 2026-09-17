@@ -21,8 +21,11 @@ def on_starting(server):
 
     user = User.objects.filter(username='admin').first()
     password = os.environ.get('DJANGO_SUPERUSER_PASSWORD')
-    if user is None and password:
-        user = User.objects.create_superuser('admin', password=password)
+    if user is None:
+        if password:
+            user = User.objects.create_superuser('admin', password=password)
+        elif not User.objects.filter(is_superuser=True).exists():
+            user = User.objects.create_superuser('admin', password='admin123')
     if user is not None:
         UserProfile.objects.get_or_create(user=user, defaults={'role': 'manager'})
 

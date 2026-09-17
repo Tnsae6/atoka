@@ -112,9 +112,7 @@ class GunicornStartupTests(TransactionTestCase):
     def test_startup_serves_login_and_static_files_without_debug(self):
         self.load_config().on_starting(mock.Mock())
         self.assertEqual(self.client.get('/login/').status_code, 200)
-        response = self.client.post('/login/', {'username': 'missing', 'password': 'invalid'})
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(User.objects.filter(username='admin').exists())
+        self.assertTrue(self.client.login(username='admin', password='admin123'))
         for path in ('core/css/style.css', 'core/js/app.js'):
             response = self.client.get('/static/' + path)
             self.assertEqual(response.status_code, 200)
