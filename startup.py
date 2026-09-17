@@ -1,34 +1,10 @@
 import os
 import sys
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'atoka_project.settings')
 
-import django
-django.setup()
-
-from django.core.management import call_command
-
-# Run migrations (creates DB tables if first run)
-call_command('migrate', '--run-syncdb', verbosity=0)
-
-call_command('collectstatic', '--noinput', verbosity=1)
-
-# Ensure admin user exists with profile
-from django.contrib.auth.models import User
-from core.models import UserProfile
-
-if not User.objects.filter(username='admin').exists():
-    u = User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
-    UserProfile.objects.get_or_create(user=u, role='manager')
-    print('Admin user created')
-else:
-    u = User.objects.get(username='admin')
-    UserProfile.objects.get_or_create(user=u, defaults={'role': 'manager'})
-    print('Admin profile ensured')
-
-print('Startup complete - starting gunicorn...')
-
-# Start gunicorn in a fresh process so cached settings/state from
-# collectstatic cannot leak into request handling
-port = os.environ.get('PORT', '8000')
-os.execv(sys.executable, [sys.executable, '-m', 'gunicorn', '--bind', f'0.0.0.0:{port}', '--workers', '2', 'atoka_project.wsgi:application'])
+if __name__ == '__main__':
+    port = os.environ.get('PORT', '8000')
+    os.execv(sys.executable, [
+        sys.executable, '-m', 'gunicorn', '--bind', f'0.0.0.0:{port}',
+        'atoka_project.wsgi:application',
+    ])
