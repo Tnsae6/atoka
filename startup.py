@@ -28,6 +28,9 @@ else:
 
 print('Startup complete - starting gunicorn...')
 
-# Start gunicorn
+# Start gunicorn bound to Render's required host/port
+import sys
+port = os.environ.get('PORT', '8000')
+sys.argv = ['gunicorn', '--bind', f'0.0.0.0:{port}', '--workers', '2', 'atoka_project.wsgi:application']
 from gunicorn.app.wsgiapp import run
 run()
