@@ -20,6 +20,15 @@ from django.utils import timezone
 from .models import UserProfile, Category, Product, StockItem, StockTransaction, Order, OrderItem
 
 
+from django.views.decorators.csrf import csrf_exempt
+
+
+@csrf_exempt
+@require_http_methods(["GET", "HEAD"])
+def health_check(request):
+    return JsonResponse({"status": "ok"})
+
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')

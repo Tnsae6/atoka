@@ -50,4 +50,5 @@ urlpatterns = [
 
     # JSON API for dynamic product loading
     path('api/products/', views.get_products_json, name='get_products_json'),
+    path('health/', views.health_check, name='health_check'),
 ]
