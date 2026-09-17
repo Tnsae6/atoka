@@ -46,6 +46,19 @@ class GunicornStartupTests(TransactionTestCase):
             self.assertTrue(b''.join(response.streaming_content))
             response.close()
 
+    def test_static_files_available_before_collection(self):
+        self.assertEqual(list(settings.STATIC_ROOT.iterdir()), [])
+        for path, content_type in (
+            ('core/css/style.css', 'text/css'),
+            ('core/js/app.js', 'text/javascript'),
+        ):
+            response = self.client.get('/static/' + path)
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(content_type, response['Content-Type'])
+            self.assertTrue(b''.join(response.streaming_content))
+            response.close()
+        self.assertEqual(self.client.get('/static/nonexistent.css').status_code, 404)
+
     def test_startup_creates_admin_only_with_configured_password(self):
         password = secrets.token_urlsafe(32)
         config = self.load_config()
