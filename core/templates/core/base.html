@@ -13,7 +13,14 @@
         <div class="nav-brand">
             <a href="{% url 'dashboard' %}">Atoka</a>
         </div>
-        <div class="nav-links">
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
+        <div class="nav-links" id="navLinks">
             {% if user.profile.role == 'manager' %}
             <a href="{% url 'manager_dashboard' %}">Dashboard</a>
             <a href="{% url 'menu_management' %}">Menu</a>
@@ -32,6 +39,7 @@
             <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
         </div>
     </nav>
+    <div class="nav-overlay" id="navOverlay"></div>
     {% endif %}
 
     <main class="container">
@@ -47,6 +55,35 @@
     </main>
 
     <script src="{% static 'core/js/app.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const navToggle = document.getElementById('navToggle');
+            const navLinks = document.getElementById('navLinks');
+            const navOverlay = document.getElementById('navOverlay');
+
+            if (navToggle && navLinks && navOverlay) {
+                navToggle.addEventListener('click', function() {
+                    const isOpen = navLinks.classList.toggle('open');
+                    navOverlay.classList.toggle('open', isOpen);
+                    navToggle.setAttribute('aria-expanded', isOpen);
+                });
+
+                navOverlay.addEventListener('click', function() {
+                    navLinks.classList.remove('open');
+                    navOverlay.classList.remove('open');
+                    navToggle.setAttribute('aria-expanded', 'false');
+                });
+
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', function() {
+                        navLinks.classList.remove('open');
+                        navOverlay.classList.remove('open');
+                        navToggle.setAttribute('aria-expanded', 'false');
+                    });
+                });
+            }
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

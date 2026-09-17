@@ -52,6 +52,7 @@
 {% if today_orders %}
 <div class="section">
     <h2>Today's Orders</h2>
+    <div class="table-responsive">
     <table class="data-table">
         <thead>
             <tr>
@@ -86,7 +87,8 @@
             </tr>
             {% endfor %}
         </tbody>
-    </table>
-</div>
+</table>
+        </div>
+    </div>
 {% endif %}
 {% endblock %}
