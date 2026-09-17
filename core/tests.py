@@ -11,6 +11,26 @@ from django.test import Client, TestCase, TransactionTestCase
 from core.models import UserProfile
 
 
+class DashboardLayoutTests(TestCase):
+    def test_dashboards_render_mobile_navigation_and_scrollable_tables(self):
+        for role, url in (
+            ('manager', '/manager/'),
+            ('waiter', '/waiter/'),
+            ('stock_manager', '/stock/'),
+        ):
+            with self.subTest(role=role):
+                user = User.objects.create_user(username=role)
+                UserProfile.objects.create(user=user, role=role)
+                self.client.force_login(user)
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, 'aria-controls="navLinks"')
+                self.assertContains(response, 'aria-expanded="false"')
+                self.assertContains(response, 'id="navOverlay"')
+                if role != 'waiter':
+                    self.assertContains(response, 'class="table-responsive"')
+
+
 class SuperuserRegistrationTests(TestCase):
     def setUp(self):
         self.token = secrets.token_urlsafe(32)

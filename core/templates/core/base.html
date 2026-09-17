@@ -13,7 +13,7 @@
         <div class="nav-brand">
             <a href="{% url 'dashboard' %}">Atoka</a>
         </div>
-        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
+        <button type="button" class="nav-toggle" id="navToggle" aria-label="Open navigation" aria-controls="navLinks" aria-expanded="false">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="3" y1="6" x2="21" y2="6"></line>
                 <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -62,23 +62,50 @@
             const navOverlay = document.getElementById('navOverlay');
 
             if (navToggle && navLinks && navOverlay) {
+                const mobile = window.matchMedia('(max-width: 768px)');
+                const main = document.querySelector('main');
+                const brand = document.querySelector('.nav-brand');
+
+                function setOpen(open, returnFocus = false) {
+                    navLinks.classList.toggle('open', open);
+                    navOverlay.classList.toggle('open', open);
+                    navToggle.setAttribute('aria-expanded', String(open));
+                    navToggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+                    main.inert = open;
+                    brand.inert = open;
+                    document.body.style.overflow = open ? 'hidden' : '';
+                    if (returnFocus) navToggle.focus();
+                }
+
                 navToggle.addEventListener('click', function() {
-                    const isOpen = navLinks.classList.toggle('open');
-                    navOverlay.classList.toggle('open', isOpen);
-                    navToggle.setAttribute('aria-expanded', isOpen);
+                    setOpen(!navLinks.classList.contains('open'));
                 });
-
                 navOverlay.addEventListener('click', function() {
-                    navLinks.classList.remove('open');
-                    navOverlay.classList.remove('open');
-                    navToggle.setAttribute('aria-expanded', 'false');
+                    setOpen(false, true);
                 });
-
+                document.addEventListener('keydown', function(event) {
+                    if (!mobile.matches || !navLinks.classList.contains('open')) return;
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        setOpen(false, true);
+                    }
+                    if (event.key === 'Tab') {
+                        const lastLink = navLinks.querySelector('a:last-child');
+                        if (event.shiftKey && document.activeElement === navToggle) {
+                            event.preventDefault();
+                            lastLink.focus();
+                        } else if (!event.shiftKey && document.activeElement === lastLink) {
+                            event.preventDefault();
+                            navToggle.focus();
+                        }
+                    }
+                });
+                mobile.addEventListener('change', function() {
+                    setOpen(false);
+                });
                 navLinks.querySelectorAll('a').forEach(link => {
                     link.addEventListener('click', function() {
-                        navLinks.classList.remove('open');
-                        navOverlay.classList.remove('open');
-                        navToggle.setAttribute('aria-expanded', 'false');
+                        setOpen(false);
                     });
                 });
             }
