@@ -587,6 +587,7 @@ body {
     padding: 1.5rem;
     border-radius: var(--radius);
     box-shadow: var(--shadow);
+    min-width: 0;
 }
 
 .category-tabs {
@@ -1097,8 +1098,15 @@ body {
         overflow-wrap: anywhere;
     }
 
+    .data-table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
     .order-form-layout {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .order-sidebar {
