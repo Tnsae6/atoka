@@ -329,7 +329,8 @@ def waiter_daily_report(request):
 
 @login_required
 def create_order(request):
-    if get_user_role(request.user) != 'waiter':
+    role = get_user_role(request.user)
+    if role not in ('waiter', 'manager'):
         return redirect('dashboard')
     if request.method == 'POST':
         table_number = request.POST.get('table_number', '')
@@ -339,7 +340,7 @@ def create_order(request):
 
         if not items:
             messages.error(request, 'Please add items to the order.')
-            return redirect('create_order')
+            return redirect('manager_create_order' if role == 'manager' else 'create_order')
 
         order = Order.objects.create(
             waiter=request.user,
@@ -359,10 +360,13 @@ def create_order(request):
 
         order.calculate_total()
         messages.success(request, f'Order #{order.id} created successfully.')
-        return redirect('waiter_dashboard')
+        return redirect('manager_dashboard' if role == 'manager' else 'waiter_dashboard')
 
     categories = Category.objects.filter(is_active=True).prefetch_related('products')
-    return render(request, 'core/create_order.html', {'categories': categories})
+    return render(request, 'core/create_order.html', {
+        'categories': categories,
+        'role': role,
+    })
 
 
 @login_required
@@ -871,15 +875,16 @@ def delete_user(request, pk):
 
 @login_required
 def edit_order(request, pk):
-    if get_user_role(request.user) != 'waiter':
+    role = get_user_role(request.user)
+    if role not in ('waiter', 'manager'):
         return redirect('dashboard')
     order = get_object_or_404(Order, pk=pk)
-    if order.waiter != request.user:
+    if role == 'waiter' and order.waiter != request.user:
         messages.error(request, 'You can only edit your own orders.')
         return redirect('waiter_dashboard')
     if order.status not in ('pending', 'preparing', 'ready', 'served'):
         messages.error(request, 'Cannot edit an order that has already been paid.')
-        return redirect('waiter_dashboard')
+        return redirect('manager_orders' if role == 'manager' else 'waiter_dashboard')
 
     categories = Category.objects.filter(is_active=True).prefetch_related('products')
 
@@ -911,7 +916,7 @@ def edit_order(request, pk):
 
         order.calculate_total()
         messages.success(request, f'Order #{order.id} updated successfully.')
-        return redirect('waiter_dashboard')
+        return redirect('manager_orders' if role == 'manager' else 'waiter_dashboard')
 
     existing_items = []
     for item in order.items.select_related('product').all():
@@ -932,13 +937,17 @@ def edit_order(request, pk):
 
 @login_required
 def merge_orders(request):
-    if get_user_role(request.user) != 'waiter':
+    role = get_user_role(request.user)
+    if role not in ('waiter', 'manager'):
         return redirect('dashboard')
 
     if request.method == 'POST':
         order_id = request.POST.get('order_id')
         if order_id:
-            order = get_object_or_404(Order, pk=order_id, waiter=request.user)
+            order = get_object_or_404(Order, pk=order_id)
+            if role == 'waiter' and order.waiter != request.user:
+                messages.error(request, 'You can only edit your own orders.')
+                return redirect('waiter_dashboard')
             if order.status in ('paid', 'cancelled'):
                 messages.error(request, 'Cannot add items to a paid or cancelled order.')
             else:
@@ -952,16 +961,22 @@ def merge_orders(request):
                 if existing:
                     return redirect('edit_order', pk=existing.pk)
                 else:
-                    return redirect('create_order')
+                    return redirect('manager_create_order' if role == 'manager' else 'create_order')
             else:
                 messages.error(request, 'Please select an order or enter a table number.')
 
-    active_orders = Order.objects.filter(
-        waiter=request.user
-    ).exclude(status__in=['paid', 'cancelled']).select_related().prefetch_related('items__product')
+    if role == 'manager':
+        active_orders = Order.objects.exclude(
+            status__in=['paid', 'cancelled']
+        ).select_related().prefetch_related('items__product')
+    else:
+        active_orders = Order.objects.filter(
+            waiter=request.user
+        ).exclude(status__in=['paid', 'cancelled']).select_related().prefetch_related('items__product')
 
     return render(request, 'core/merge_orders.html', {
         'active_orders': active_orders,
+        'role': role,
     })
 
 

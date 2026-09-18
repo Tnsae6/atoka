@@ -54,7 +54,7 @@
             <label for="orderNotes">Notes</label>
             <textarea id="orderNotes" rows="2" placeholder="Special instructions..."></textarea>
         </div>
-        <form id="orderForm" method="post" action="{% url 'create_order' %}">
+        <form id="orderForm" method="post" action="{% if role == 'manager' %}{% url 'manager_create_order' %}{% else %}{% url 'create_order' %}{% endif %}">
             {% csrf_token %}
             <input type="hidden" name="table_number" id="hiddenTableNumber">
             <input type="hidden" name="notes" id="hiddenNotes">

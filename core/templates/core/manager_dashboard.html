@@ -94,11 +94,10 @@
     <div class="section">
         <h2>Quick Actions</h2>
         <div class="quick-actions">
-            <a href="{% url 'category_create' %}" class="btn btn-primary">Add Category</a>
-            <a href="{% url 'product_create' %}" class="btn btn-primary">Add Product</a>
-            <a href="{% url 'daily_report' %}" class="btn btn-primary">Daily Report</a>
-            <a href="{% url 'create_user' %}" class="btn btn-secondary">Add User</a>
+            <a href="{% url 'manager_create_order' %}" class="btn btn-primary">New Order</a>
+            <a href="{% url 'manager_merge_orders' %}" class="btn btn-primary">Add to Existing Order</a>
             <a href="{% url 'manager_orders' %}" class="btn btn-secondary">View All Orders</a>
+            <a href="{% url 'daily_report' %}" class="btn btn-secondary">Daily Report</a>
         </div>
     </div>
 </div>
