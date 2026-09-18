@@ -1,8 +1,10 @@
 {% extends "core/base.html" %}
+{% load static %}
 {% block title %}Login - Atoka{% endblock %}
 {% block content %}
 <div class="login-container">
     <div class="login-card">
+        <img src="{% static 'core/img/logo.svg' %}" alt="Atoka" style="display:block;margin:0 auto 1rem;width:120px;height:auto;">
         <h1>Atoka</h1>
         <p class="login-subtitle">Restaurant & Cafe System</p>
         <form method="post">

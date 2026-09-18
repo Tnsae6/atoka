@@ -11,7 +11,7 @@
     {% if user.is_authenticated %}
     <nav class="navbar">
         <div class="nav-brand">
-            <a href="{% url 'dashboard' %}">Atoka</a>
+            <a href="{% url 'dashboard' %}"><img src="{% static 'core/img/logo.svg' %}" alt="Atoka" height="40"></a>
         </div>
         <button type="button" class="nav-toggle" id="navToggle" aria-label="Open navigation" aria-controls="navLinks" aria-expanded="false">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
